@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n-page-title="page_title_analytics">WardFlow: Analytics Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <div class="app">
+    <div id="topbar-slot"></div>
+    <div id="statsbar-slot"></div>
+
+    <div class="main">
+      <div id="sidebar-slot"></div>
+
+      <div class="content">
+        <div class="page active" id="page-analytics">
+          <div class="page-header">
+            <h2 data-i18n="analytics_title">Operational Analytics</h2>
+            <p data-i18n="analytics_desc">Live capacity modeling and team workload distribution</p>
+            <div id="analyticsScopeBadge" class="scope-pill" style="display:none;"></div>
+          </div>
+
+          <div class="sys-section" style="margin-top: 12px; margin-bottom: 16px;">
+            <h4 class="kpi-group-title" data-i18n="analytics_group_flow">Patient Flow</h4>
+            <div class="sys-grid" style="margin-bottom: 0;">
+              <div class="metric-card kpi-drill" data-kpi="admissions">
+                <div class="metric-label" data-i18n="stat_admissions_today">Admissions today</div>
+                <div class="metric-val metric-val-enhanced"><span id="anaAdmissions">0</span><span class="trend trend-neutral">-</span></div>
+              </div>
+              <div class="metric-card kpi-drill" data-kpi="pending-admissions">
+                <div class="metric-label" data-i18n="analytics_pending_admissions">Pending admissions</div>
+                <div class="metric-val metric-val-enhanced"><span id="anaPendingAdmissions">0</span><span class="trend trend-neutral">-</span></div>
+              </div>
+              <div class="metric-card kpi-drill" data-kpi="transfers">
+                <div class="metric-label" data-i18n="stat_transfers_today">Transfers today</div>
+                <div class="metric-val metric-val-enhanced"><span id="anaTransfers">0</span><span class="trend trend-neutral">-</span></div>
+              </div>
+              <div class="metric-card kpi-drill" data-kpi="discharged">
+                <div class="metric-label" data-i18n="stat_discharged_today">Discharged today</div>
+                <div class="metric-val metric-val-enhanced"><span id="anaDischarged">0</span><span class="trend trend-neutral">-</span></div>
+              </div>
+            </div>
+
+            <h4 class="kpi-group-title" data-i18n="analytics_group_capacity">Capacity and Resources</h4>
+            <div class="sys-grid" style="margin-bottom: 0;">
+              <div class="metric-card kpi-drill" data-kpi="occupancy">
+                <div class="metric-label" data-i18n="stat_total_occupancy">Total occupancy</div>
+                <div class="metric-val metric-val-enhanced"><span id="anaTotalOccupancy">0/0</span><span class="kpi-subtext" id="anaTotalOccupancyPct">0%</span></div>
+                <div class="mini-progress-track"><div class="mini-progress-fill" id="anaOccupancyProgress" style="width: 0%;"></div></div>
+              </div>
+              <div class="metric-card kpi-drill" data-kpi="alos">
+                <div class="metric-label">ALOS (Est.)</div>
+                <div class="metric-val metric-val-enhanced"><span id="anaAlos">0.0d</span><span class="trend trend-good">-</span></div>
+              </div>
+              <div class="metric-card kpi-drill" data-kpi="bottleneck">
+                <div class="metric-label">Bottleneck alert (&gt;90%)</div>
+                <div class="metric-val metric-status status-clear" id="anaBottleneckAlert">No ward above 90%</div>
+              </div>
+              <div class="metric-card kpi-drill" data-kpi="active-teams">
+                <div class="metric-label" data-i18n="stat_active_teams">Active teams</div>
+                <div class="metric-val" id="anaGlobalTeams">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="charts-grid">
+            
+            <div class="chart-card">
+              <h4>Ward Capacity (Occupied vs Available)</h4>
+              <div class="chart-wrapper">
+                <canvas id="wardChart"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <h4>Active Patient Distribution by Team</h4>
+              <div class="chart-wrapper">
+                <canvas id="teamChart"></canvas>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modals-slot"></div>
+
+  <script src="components.js"></script>
+  <script src="data.js"></script>
+  <script>
+    injectComponents('analytics'); // Marks the analytics page as active in the shared navigation.
+  </script>
+  <script src="auth.js"></script>
+  <script src="ui.js"></script>
+  <script src="actions.js"></script>
+  <script src="modals.js"></script>
+  <script src="admin.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

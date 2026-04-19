@@ -1,0 +1,6 @@
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30,<1
+psycopg[binary,pool]>=3.2,<4
+python-dotenv>=1.0,<2
+PyJWT>=2.9,<3
+bcrypt>=4.1,<6

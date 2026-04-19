@@ -1,0 +1,299 @@
+// =============================================================================
+// actions.js - Patient Lifecycle Operations (Admit, Discharge, Transfer, Treat)
+// =============================================================================
+// PURPOSE: Core patient data manipulation functions
+// Handles: Admit new patients, discharge, transfer between wards/teams, log treatments
+//
+// CALLED BY: User button clicks and form submissions
+// DEPENDS ON: data.js (patients, doctors globals), auth.js (getPerms)
+// SIDE EFFECTS: Modifies patients[], wardConfig, auditLog. Calls saveData() to persist.
+// =============================================================================
+
+function getApiBaseUrl() {
+  if (typeof window.resolveApiBaseUrl === 'function') {
+    return window.resolveApiBaseUrl();
+  }
+  return window.WARDFLOW_API_BASE_URL || '/api';
+}
+
+async function apiRequest(path, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  const token = sessionStorage.getItem('wardflow_access_token') || JSON.parse(sessionStorage.getItem('activeUser') || 'null')?.token;
+  if (token && !headers.Authorization) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  if (options.body && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+    ...options,
+    headers
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || payload.success === false) {
+    const errorMessage = payload.detail || payload.error || `Request failed (${response.status})`;
+    throw new Error(errorMessage);
+  }
+
+  return payload;
+}
+
+async function refreshFromBackendSnapshot() {
+  if (typeof initializeApp === 'function') {
+    await initializeApp();
+    return;
+  }
+  refreshDashboard();
+}
+
+// ADMIT PATIENT: Create new patient record and assign to ward + team
+// Params: None (reads from form fields in admitModal)
+// Returns: void
+// Side effects: Adds to patients[], wardObj.occ++, auditLog, calls refreshDashboard()
+// Called by: admitModal form submit button
+async function admitPatient() {
+  if (!getPerms().admit) { alert('You do not have permission to admit patients.'); return; }
+  const name = document.getElementById('admitName').value.trim();
+  if(!name) { alert('Please enter a patient name'); return; }
+
+  const sexSelect = document.getElementById('admitSex');
+  const sex = sexSelect ? sexSelect.value : '—'; 
+  
+  const dobInput = document.getElementById('admitDob');
+  let age = '—';
+  if (dobInput && dobInput.value) {
+    const dob = new Date(dobInput.value);
+    const diff = Date.now() - dob.getTime();
+    age = Math.abs(new Date(diff).getUTCFullYear() - 1970); 
+  }
+
+  const wardName = (document.getElementById('admitWard').value || '').trim();
+  const preferredBedLabel = (document.getElementById('admitBed')?.value || '').trim();
+  if (!wardName) {
+    alert('Please select a ward and bed.');
+    return;
+  }
+
+  const wardObj = wards.find(w => w.name === wardName);
+  if (!wardObj) return;
+
+  const patientsInWard = patients.filter(p => p.ward === wardName);
+  const occupiedBeds = patientsInWard.map(p => {
+    const match = p.bed.match(/\d+/); 
+    return match ? parseInt(match[0]) : 0;
+  });
+
+  let bedLabelForAdmission = '';
+  if (preferredBedLabel) {
+    const selectedBedMatch = preferredBedLabel.match(/\d+/);
+    const selectedBedNum = selectedBedMatch ? parseInt(selectedBedMatch[0], 10) : NaN;
+    if (!Number.isFinite(selectedBedNum) || selectedBedNum < 1 || selectedBedNum > wardObj.beds) {
+      alert('Selected bed is invalid for this ward. Please reselect a bed.');
+      return;
+    }
+    if (occupiedBeds.includes(selectedBedNum)) {
+      alert('Selected bed is no longer available. Please choose another bed.');
+      return;
+    }
+    bedLabelForAdmission = `Bed ${selectedBedNum}`;
+  } else {
+    if (wardObj.occ >= wardObj.beds) {
+      alert(`🚨 Admission Failed: ${wardName} Ward is at maximum capacity.`);
+      return;
+    }
+
+    let availableBedNum = 1;
+    while (occupiedBeds.includes(availableBedNum)) { availableBedNum++; }
+    bedLabelForAdmission = `Bed ${availableBedNum}`;
+  }
+  
+  const teamSelect = document.getElementById('admitTeam');
+  const teamCode = teamSelect ? teamSelect.value : 'Alpha';
+  const existingIds = new Set(patients.map(p => p.id));
+  let newId;
+  do { newId = String(Math.floor(Math.random()*900)+100); }
+  while (existingIds.has(newId));
+  
+  if (!confirm(`Admit ${name} to ${wardName} Ward (${bedLabelForAdmission})?`)) return;
+
+  try {
+    const result = await apiRequest('/patients', {
+      method: 'POST',
+      body: JSON.stringify({
+        full_name: name,
+        age: Number.isFinite(age) ? age : 0,
+        sex: (sex && sex !== '—') ? sex : 'O',
+        ward: wardName,
+        team: teamCode,
+        bed_label: bedLabelForAdmission
+      })
+    });
+
+    if (typeof logSystemAction === 'function') {
+      logSystemAction('PATIENT_ADMIT', result?.data?.patient_code || name, {
+        ward: wardName,
+        team: teamCode,
+        actor: JSON.parse(sessionStorage.getItem('activeUser') || 'null')?.email || 'SYSTEM'
+      });
+    }
+
+    admissionsToday++;
+    await refreshFromBackendSnapshot();
+
+    closeModal('admitModal');
+    document.getElementById('admitName').value = '';
+    if (dobInput) dobInput.value = '';
+    if (typeof updateAdmitBedUi === 'function') {
+      updateAdmitBedUi('', '');
+    }
+    showToast(`Admitted ${name}`);
+  } catch (error) {
+    alert(`Admission failed: ${error.message}`);
+  }
+}
+
+// DISCHARGE PATIENT: Remove patient from system (permanent deletion)
+// Params: None (uses currentPatientId set by openDetail)
+// Returns: void
+// Side effects: Removes from patients[], auditLog updated, calls refreshDashboard()
+// Called by: "Discharge" button in patient detail modal
+async function dischargePatient() {
+  if (!getPerms().discharge) { alert('You do not have permission to discharge patients.'); return; }
+  if (!confirm('Discharge this patient? They will be removed from the board.')) return;
+
+  try {
+    const dischargeTarget = currentPatientId;
+    await apiRequest(`/patients/${encodeURIComponent(currentPatientId)}`, {
+      method: 'DELETE'
+    });
+
+    if (typeof logSystemAction === 'function') {
+      logSystemAction('PATIENT_DISCHARGE', dischargeTarget, {
+        actor: JSON.parse(sessionStorage.getItem('activeUser') || 'null')?.email || 'SYSTEM'
+      });
+    }
+
+    dischargedToday++;
+    await refreshFromBackendSnapshot();
+    showToast(`Patient ${currentPatientId} discharged`);
+  } catch (error) {
+    alert(`Discharge failed: ${error.message}`);
+  }
+  closeModal('detailModal');
+}
+
+// TRANSFER PATIENT: Move patient to different ward and/or team
+// Params: None (reads from transfer modal form fields)
+// Returns: void
+// Side effects: Modifies patient.ward, patient.team, auditLog, calls refreshDashboard()
+// Called by: "Confirm Transfer" button in transfer modal
+// Checks permission and logs the action
+async function doTransfer() {
+  if (!getPerms().transfer) { alert('You do not have permission to transfer patients.'); return; }
+  
+  const p = patients.find(x => x.id === currentPatientId);
+  if (p) {
+    const newWard = document.getElementById('transferWardSelect').value;
+    const targetWard = wards.find(w => w.name === newWard);
+    if (!targetWard) {
+      alert('Selected ward not found. Please try again.');
+      return;
+    }
+    if (newWard !== p.ward && targetWard.occ >= targetWard.beds) {
+      alert(`Transfer blocked: ${newWard} Ward is at maximum capacity.`);
+      return;
+    }
+    if (!confirm(`Transfer this patient to ${newWard}?`)) return;
+    
+    const newTeam = document.getElementById('transferTeamSelect').value;
+
+    try {
+      const transferTarget = currentPatientId;
+      await apiRequest(`/patients/${encodeURIComponent(currentPatientId)}/transfer`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          ward: newWard,
+          team: newTeam
+        })
+      });
+
+      if (typeof logSystemAction === 'function') {
+        logSystemAction('PATIENT_TRANSFER', transferTarget, {
+          toWard: newWard,
+          toTeam: newTeam,
+          actor: JSON.parse(sessionStorage.getItem('activeUser') || 'null')?.email || 'SYSTEM'
+        });
+      }
+
+      transfersToday++;
+      await refreshFromBackendSnapshot();
+      showToast(`Patient ${currentPatientId} transferred`);
+    } catch (error) {
+      alert(`Transfer failed: ${error.message}`);
+      return;
+    }
+  }
+  closeModal('transferModal');
+}
+
+// RECORD TREATMENT: Log doctor treatment for a patient
+// Params: None (reads from detail modal form fields)
+// Returns: void
+// Side effects: Adds treatment record to patient.treatments, calls saveData()
+// Called by: "Log Treatment" button in patient detail modal
+// Validation: Checks permission, doctor exists, team matches patient team
+async function recordTreatment() {
+  if (!getPerms().logTreatment) { alert('You do not have permission to log treatments.'); return; }
+  
+  const p = patients.find(x => x.id === currentPatientId);
+  if (!p) return;
+
+  const docName = document.getElementById('treatmentDoctorSelect').value;
+  const errorEl = document.getElementById('treatmentError');
+
+  if (!docName) {
+    errorEl.textContent = "Please select a doctor from the list.";
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  const selectedDoc = doctors.find(d => d.name === docName);
+  if (!selectedDoc) {
+    errorEl.textContent = "Doctor not found. Please refresh and try again.";
+    errorEl.style.display = 'block';
+    return;
+  }
+  
+  const pTeamFormatted = p.team.includes('Team') ? p.team : 'Team ' + p.team;
+
+  if (selectedDoc.team !== pTeamFormatted) {
+    errorEl.textContent = `Action Denied: ${selectedDoc.name} belongs to ${selectedDoc.team}. This patient is under the care of ${pTeamFormatted}.`;
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  errorEl.style.display = 'none';
+
+  try {
+    const result = await apiRequest(`/patients/${encodeURIComponent(currentPatientId)}/treatments`, {
+      method: 'POST',
+      body: JSON.stringify({ doctor_name: selectedDoc.name })
+    });
+
+    if (!p.treatments) p.treatments = [];
+    p.treatments.unshift({
+      name: result.data.name,
+      role: result.data.role,
+      grade: result.data.grade
+    });
+
+    renderTreatments(currentPatientId);
+    document.getElementById('treatmentDoctorSelect').value = '';
+    showToast('Treatment recorded');
+  } catch (error) {
+    errorEl.textContent = `Treatment failed: ${error.message}`;
+    errorEl.style.display = 'block';
+  }
+}

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n-page-title="page_title_login">WardFlow - Secure Login</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Keep login scrollable on small screens while the rest of the app stays fixed-height. */
+    body.login-body { overflow: auto; }
+  </style>
+</head>
+<body class="login-body">
+
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="logo-icon" style="margin: 0 auto 16px auto; width: 48px; height: 48px;">
+          <svg viewBox="0 0 20 20" style="width: 24px; height: 24px;"><polyline points="2,10 6,4 10,14 14,6 18,10"/></svg>
+        </div>
+        <h2>Welcome to WardFlow</h2>
+        <p>Enter your clinical credentials to access the dashboard</p>
+      </div>
+      
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Staff ID or Email</label>
+          <input type="text" id="loginEmail" class="form-input" placeholder="e.g. dr.house@hospital.com" required autocomplete="username"/>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div style="position: relative;">
+            <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required autocomplete="current-password" style="width: 100%; padding-right: 36px;"/>
+            <button type="button" onclick="togglePasswordVisibility()" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--color-text-secondary); padding:2px;" title="Show/hide password">
+              <svg id="eyeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="loginError" style="display:none; color:#E24B4A; font-size:12px; margin-top:-4px; margin-bottom:8px; padding: 8px 10px; background: rgba(226,75,74,0.08); border-radius: 6px; border: 0.5px solid rgba(226,75,74,0.3);"></div>
+        
+        <div class="login-options">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
+            <input type="checkbox" id="rememberMe"> Remember me
+          </label>
+          <a href="#" onclick="openForgotPasswordModal(event)" style="font-size: 12px; color: #1D9E75; text-decoration: none;">Forgot password?</a>
+        </div>
+        
+        <button type="submit" class="btn-primary" id="loginBtn" style="width: 100%; margin-top: 24px; padding: 10px; font-size: 14px;">Sign In</button>
+      </form>
+      
+      <div style="text-align: center; margin-top: 20px; font-size: 11px; color: var(--color-text-secondary);">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        Secure Hospital Network • Authorized Personnel Only
+      </div>
+    </div>
+  </div>
+
+  <div id="passwordChangeModal" class="modal-overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-labelledby="passwordChangeTitle">
+      <h3 id="passwordChangeTitle" class="modal-title">Update Temporary Password</h3>
+      <p class="modal-sub">Your account requires a password reset before you can continue.</p>
+      <form onsubmit="submitForcedPasswordChange(event)">
+        <div class="form-group">
+          <label class="form-label" for="currentPassword">Current Password</label>
+          <input id="currentPassword" type="password" class="form-input" autocomplete="current-password" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="newPassword">New Password</label>
+          <input id="newPassword" type="password" class="form-input" autocomplete="new-password" minlength="8" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="confirmNewPassword">Confirm New Password</label>
+          <input id="confirmNewPassword" type="password" class="form-input" autocomplete="new-password" minlength="8" required>
+        </div>
+        <div id="passwordChangeError" style="display:none; font-size:12px; margin: 8px 0; padding:8px 10px; border-radius:6px;"></div>
+        <div class="modal-actions">
+          <button id="passwordChangeBtn" type="submit" class="btn-primary">Change Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="otpModal" class="modal-overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-labelledby="otpTitle">
+      <h3 id="otpTitle" class="modal-title">Two-Factor Verification</h3>
+      <p class="modal-sub">Enter the one-time code sent to your registered email.</p>
+      <form onsubmit="submitOtpVerification(event)">
+        <div class="form-group">
+          <label class="form-label" for="otpCode">OTP Code</label>
+          <input id="otpCode" type="text" class="form-input" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code" required>
+        </div>
+        <div id="otpMessage" style="display:none; font-size:12px; margin: 8px 0; padding:8px 10px; border-radius:6px;"></div>
+        <div class="modal-actions" style="justify-content: space-between;">
+          <button id="resendOtpBtn" type="button" class="btn-cancel" onclick="resendOtpCode()">Resend Code</button>
+          <button id="verifyOtpBtn" type="submit" class="btn-primary">Verify &amp; Continue</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="forgotPasswordRequestModal" class="modal-overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-labelledby="forgotPasswordRequestTitle">
+      <h3 id="forgotPasswordRequestTitle" class="modal-title">Reset Password</h3>
+      <p class="modal-sub">Enter your account email and we will send a one-time reset token.</p>
+      <form onsubmit="submitForgotPasswordRequest(event)">
+        <div class="form-group">
+          <label class="form-label" for="resetEmail">Account Email</label>
+          <input id="resetEmail" type="email" class="form-input" autocomplete="email" required>
+        </div>
+        <div id="forgotPasswordRequestMessage" style="display:none; font-size:12px; margin: 8px 0; padding:8px 10px; border-radius:6px;"></div>
+        <div class="modal-actions" style="justify-content: space-between;">
+          <button type="button" class="btn-cancel" onclick="closeForgotPasswordRequestModal()">Cancel</button>
+          <button id="forgotPasswordRequestBtn" type="submit" class="btn-primary">Send Reset Token</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="forgotPasswordConfirmModal" class="modal-overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-labelledby="forgotPasswordConfirmTitle">
+      <h3 id="forgotPasswordConfirmTitle" class="modal-title">Confirm Password Reset</h3>
+      <p class="modal-sub">Enter the token from your email and choose a new password.</p>
+      <form onsubmit="submitForgotPasswordConfirm(event)">
+        <div class="form-group">
+          <label class="form-label" for="resetConfirmEmail">Account Email</label>
+          <input id="resetConfirmEmail" type="email" class="form-input" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="resetToken">Reset Token</label>
+          <input id="resetToken" type="text" class="form-input" autocomplete="one-time-code" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="resetNewPassword">New Password</label>
+          <input id="resetNewPassword" type="password" class="form-input" minlength="8" autocomplete="new-password" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="resetConfirmNewPassword">Confirm New Password</label>
+          <input id="resetConfirmNewPassword" type="password" class="form-input" minlength="8" autocomplete="new-password" required>
+        </div>
+        <div id="forgotPasswordConfirmMessage" style="display:none; font-size:12px; margin: 8px 0; padding:8px 10px; border-radius:6px;"></div>
+        <div class="modal-actions" style="justify-content: space-between;">
+          <button type="button" class="btn-cancel" onclick="closeForgotPasswordConfirmModal()">Cancel</button>
+          <button id="forgotPasswordConfirmBtn" type="submit" class="btn-primary">Reset Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="auth.js"></script>
+  
+  <script>
+    const loginPageTitle = document.querySelector('[data-i18n-page-title]');
+    if (loginPageTitle && typeof t === 'function') {
+      document.title = t(loginPageTitle.getAttribute('data-i18n-page-title'), document.title);
+    }
+
+    // Restore the last remembered login email for the local test session.
+    const remembered = localStorage.getItem('wardflow_remembered_email');
+    if (remembered) {
+      const emailEl = document.getElementById('loginEmail');
+      const rememberEl = document.getElementById('rememberMe');
+      if (emailEl) emailEl.value = remembered;
+      if (rememberEl) rememberEl.checked = true;
+    }
+  </script>
+</body>
+</html>

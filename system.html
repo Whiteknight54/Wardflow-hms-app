@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n-page-title="page_title_app">WardFlow: Admissions & Team Tracking</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="app">
+    <div id="topbar-slot"></div>
+    <div id="statsbar-slot"></div>
+
+    <div class="main">
+      <div id="sidebar-slot"></div>
+
+      <div class="content">
+        <div class="page active" id="page-system">
+          <div class="page-header">
+            <h2 data-i18n="system_title">System Management</h2>
+            <p data-i18n="system_desc">Configure system settings and monitor operations</p>
+          </div>
+
+          <div class="sys-grid">
+            <div class="metric-card"><div class="metric-label">Total facility capacity</div><div class="metric-val" id="sysTotalBeds">0</div></div>
+            <div class="metric-card"><div class="metric-label">System uptime</div><div class="metric-val">99.9%</div></div>
+          </div>
+
+          <div class="sys-section">
+            <div class="sys-section-title">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="3"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2"/></svg>
+              Ward Management
+            </div>
+            <div class="sys-section-desc">Configure ward capacity, bed assignments, and ward status</div>
+            <div class="sys-btn-row">
+              <button class="sys-btn" onclick="openSysModal('Edit Wards', 'Adjust total bed capacity for each ward.')">Edit wards</button>
+              <button class="sys-btn" onclick="openSysModal('Ward History', 'View historical occupancy data and trends.')">View history</button>
+            </div>
+          </div>
+
+          <div class="sys-section">
+            <div class="sys-section-title">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="3"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2"/></svg>
+              Team Configuration
+            </div>
+            <div class="sys-section-desc">Manage team assignments, staff schedules, and workload limits</div>
+            <div class="sys-btn-row">
+              <button class="sys-btn" onclick="openSysModal('Manage Team', 'Assign or remove consultants and junior doctors.')">Manage team</button>
+              <button class="sys-btn" onclick="openSysModal('Staff Roster', 'View and edit the weekly shift roster.')">Staff roster</button>
+            </div>
+          </div>
+          
+          <div class="sys-section">
+            <div class="sys-section-title">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="3"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2"/></svg>
+              User Access Control
+            </div>
+            <div class="sys-section-desc">Set user permissions, roles, and system access levels</div>
+            <div class="sys-btn-row">
+              <button class="sys-btn" onclick="openSysModal('Manage Accounts', 'Create and manage user login credentials.')">Manage accounts</button>
+              <button class="sys-btn" onclick="openSysModal('User Roles', 'Create or modify system access roles.')">User roles</button>
+              <button class="sys-btn" onclick="openSysModal('Permissions', 'Configure global security policies (session timeout, MFA, network rules).')">Security Policies</button>
+              <button class="sys-btn" style="color: #1D9E75; border-color: #1D9E75;" onclick="openSysModal('Audit Logs', 'View immutable system action history.')">Audit Logs</button>
+            </div>
+          </div>
+          
+          <div class="sys-section">
+            <div class="sys-section-title">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="3"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2"/></svg>
+              Reports &amp; Analytics
+            </div>
+            <div class="sys-section-desc">Generate system reports, occupancy trends, and performance metrics</div>
+            <div class="sys-btn-row">
+              <button class="sys-btn" onclick="openSysModal('View Reports', 'Select a date range to generate a system performance report.')">View reports</button>
+              <button class="sys-btn" onclick="openSysModal('Export Data', 'Download patient census and team workload as a CSV.')">Export data</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modals-slot"></div>
+
+  <div class="modal-overlay" id="sysModal">
+    <div class="modal">
+      <div class="modal-title" id="sysModalTitle">System Action</div>
+      <div class="modal-sub" id="sysModalDesc">Configure system settings.</div>
+      <button class="modal-close" onclick="closeModal('sysModal')">✕</button>
+      
+      <div id="sysModalContent" style="margin-bottom: 16px;">
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('sysModal')">Cancel</button>
+        <button class="btn-primary" id="sysModalConfirmBtn" onclick="closeModal('sysModal')">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="components.js"></script>
+  <script src="data.js"></script>
+  <script>
+    injectComponents('system');
+  </script>
+  <script src="auth.js"></script>
+  <script src="ui.js"></script>
+  <script src="actions.js"></script>
+  <script src="modals.js"></script>
+  <script src="admin.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

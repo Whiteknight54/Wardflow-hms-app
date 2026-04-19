@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n-page-title="page_title_app">WardFlow: Admissions & Team Tracking</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <div id="topbar-slot"></div>
+    <div id="statsbar-slot"></div>
+
+    <div class="main">
+      <div id="sidebar-slot"></div>
+
+      <div class="content">
+        <div class="page active" id="page-admissions">
+          <div class="page-header">
+            <h2 data-i18n="admissions_title">Patient Census</h2>
+            <p data-i18n="admissions_desc">All admitted patients — transfer, view details, or log treatment</p>
+          </div>
+
+          <div class="table-wrap">
+            <table id="patientTable">
+             <thead>
+                <tr>
+                  <th id="th-id" onclick="sortTable('id')">P.ID <span class="sort-icon"></span></th>
+                  <th id="th-name" onclick="sortTable('name')" data-i18n="col_patient_name">Patient name <span class="sort-icon"></span></th>
+                  <th id="th-age" onclick="sortTable('age')" data-i18n="col_age">Age <span class="sort-icon"></span></th>
+                  <th id="th-sex" onclick="sortTable('sex')" data-i18n="col_sex">Sex <span class="sort-icon"></span></th>
+                  <th id="th-ward" onclick="sortTable('ward')" data-i18n="col_ward">Ward <span class="sort-icon"></span></th>
+                  <th id="th-bed" onclick="sortTable('bed')" data-i18n="col_bed">Bed <span class="sort-icon"></span></th>
+                  <th data-i18n="col_actions">Actions</th>
+                  <th data-i18n="col_log">Log</th>
+                </tr>
+              </thead>
+              <tbody id="patientBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modals-slot"></div>
+
+  <script src="components.js"></script>
+  <script src="data.js"></script>
+  <script>
+    injectComponents('index');
+  </script>
+  <script src="auth.js"></script>
+  <script src="ui.js"></script>
+  <script src="actions.js"></script>
+  <script src="modals.js"></script>
+  <script src="admin.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
