@@ -40,6 +40,7 @@ STAFF = [
 
 SYSTEM_USERS = [
     {"email": "admin@wardflow.com", "password": "password123", "role": "System Admin", "linked_staff_code": None},
+    {"email": "wardflowhms@gmail.com", "password": "password123", "role": "System Admin", "linked_staff_code": None},
     {"email": "house@wardflow.com", "password": "password123", "role": "Consultant", "linked_staff_code": "STF-001"},
 ]
 

@@ -1,24 +1,24 @@
 @echo off
-REM HMS HA Test Environment - Quick Start Script
+REM HMS HA Environment - Quick Start Script
 
 cd /d "c:\temp\HMS-HA-TEST" || (
-    echo ERROR: Test folder not found at c:\temp\HMS-HA-TEST
+    echo ERROR: folder not found at c:\temp\HMS-HA-TEST
     pause
     exit /b 1
 )
 
 echo.
 echo ========================================
-echo HMS HA Test Environment - Quick Start
+echo HMS HA Environment - Quick Start
 echo ========================================
 echo.
-echo Starting isolated test stack...
-echo - wardflow-test-postgres (port 5433)
-echo - wardflow-test-api (port 8001)
-echo - wardflow-test-pgadmin (port 5051)
+echo Starting isolated stack...
+echo - wardflow-postgres (port 5432)
+echo - wardflow-api (port 8001)
+echo - wardflow-pgadmin (port 5050)
 echo.
 
-docker compose -f docker-compose.test.yml up -d --build
+docker compose -f docker-compose.yml up -d --build
 
 if errorlevel 1 (
     echo ERROR: Failed to start containers
@@ -44,7 +44,7 @@ echo ========================================
 echo.
 echo Frontend:  http://localhost:5500 (run: python -m http.server 5500)
 echo API:       http://localhost:8001
-echo pgAdmin:   http://localhost:5051
+echo pgAdmin:   http://localhost:5050
 echo.
 echo Credentials:
 echo - Admin: admin@wardflow.com / password123
@@ -53,10 +53,10 @@ echo - Junior Doctor: jdoctor@wardflow.com / password123
 echo - Ward Manager: wmanager@wardflow.com / password123
 echo.
 echo pgAdmin Login:
-echo - Email: admin@wardflow.test
+echo - Email: admin@wardflow.com
 echo - Password: admin123
 echo.
-echo To stop: docker compose -f docker-compose.test.yml down
-echo To stop + clear data: docker compose -f docker-compose.test.yml down -v
+echo To stop: docker compose -f docker-compose.yml down
+echo To stop + clear data: docker compose -f docker-compose.yml down -v
 echo.
 pause

@@ -32,6 +32,30 @@ OTP_DEV_FALLBACK=false
 If `OTP_DEV_FALLBACK=true`, the API returns the OTP code in the response when SMTP delivery fails or is unavailable. Keep that disabled for real email delivery.
 When an account has a pending OTP challenge, protected API routes are blocked until `POST /api/auth/verify-otp` succeeds.
 
+## Setting Up SMTP Credentials (Gmail)
+
+To enable email features (OTP, password reset), you must set up a Gmail App Password for SMTP. Do NOT use your regular Gmail password.
+
+**Steps:**
+1. Go to https://myaccount.google.com/security
+2. Enable 2-Step Verification if not already enabled.
+3. Under "App passwords," generate a new app password for "Mail" (select "Other" if needed).
+4. Copy the generated password (16 characters, no spaces).
+5. Set the following environment variables (in your .env or Docker secrets):
+
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=<your-gmail>--or-wardflowhms@gmail.com
+SMTP_PASSWORD=<your-app-password>
+SMTP_FROM_EMAIL=<your-gmail>--or-wardflowhms@gmail.com
+SMTP_USE_TLS=true
+```
+
+**Never commit real SMTP_PASSWORD values to version control.**
+
+If you need to rotate or update the password, repeat the steps above and update your environment.
+
 ## Run
 
 1. Start the current test stack from the repo root:
@@ -56,7 +80,7 @@ docker compose -f docker-compose.test.yml up -d --build
 - `POST /api/auth/change-password` updates a temporary password and triggers OTP verification.
 - `POST /api/auth/request-otp` sends a fresh OTP challenge to the signed-in user.
 - `POST /api/auth/verify-otp` verifies the OTP challenge and completes the login flow.
-- `GET /api/auth/me` validates token and returns current user context.
+- `GET /api/aut/me` validates token and returns current user context.
 - `GET /api/wards` returns ward occupancy.
 - `GET /api/teams` returns team workload.
 - `GET /api/staff` returns the staff directory.

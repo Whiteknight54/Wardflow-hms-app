@@ -1,3 +1,19 @@
+## Data Persistence and Sharing
+
+User data (database contents) is stored in a Docker named volume: `wardflow_data`. This ensures all user and patient data persists across container restarts and rebuilds on your machine.
+
+**Important:**
+- If you want to share your environment (including user data) with another person or machine, you must also export and transfer the Docker volume. The project files alone do not include the database contents.
+- To export the volume:
+  ```bash
+  docker run --rm -v wardflow_data:/volume -v $(pwd):/backup alpine tar czf /backup/wardflow-db-backup.tar.gz -C /volume .
+  ```
+- To import on another machine:
+  ```bash
+  docker run --rm -v wardflow_data:/volume -v $(pwd):/backup alpine sh -c "cd /volume && tar xzf /backup/wardflow-db-backup.tar.gz"
+  ```
+- Alternatively, use `pg_dump`/`pg_restore` for logical backups.
+
 # WardFlow: Administrative Hospital Management System
 
 ## Overview
@@ -132,7 +148,23 @@ On errors:
 ### Database Design Baseline
 Start from [schema.sql](schema.sql) (3NF normalized for PostgreSQL).
 
-## Contributing
-- **Frontend changes:** Update corresponding module (`ui.js`, `actions.js`, etc.). See [MAINTENANCE.md](MAINTENANCE.md).
-- **Backend changes:** Document endpoint changes in a separate backend API spec.
-- **Cross-team changes:** Coordinate frontend/backend API contract changes with both teams.
+# Admin Login Information
+
+## Application (UI) Admin Logins
+- Email: admin@wardflow.com
+- Password: password123
+- Email: wardflowhms@gmail.com
+- Password: password123
+- Role: System Admin
+
+These accounts are seeded by default. If you need to reseed, run:
+
+```
+docker compose exec api python backend/scripts/seed.py
+```
+
+## Database Admin User
+- Username: admin
+- Password: password123
+
+This is used for direct database access (e.g., via psql or pgAdmin).

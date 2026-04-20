@@ -86,7 +86,7 @@ function startSessionTimeoutGuard() {
 // PASSWORD SECURITY NOTE: The live API stores hashes; the local seeded user list remains a test fallback.
 
 let systemUsers = JSON.parse(localStorage.getItem('wardflow_users')) || [
-  { email: 'admin@wardflow.com', password: 'password123', role: 'System Admin', name: 'Admin Account' },
+  { email: 'wardflowhms@gmail.com', password: 'password123', role: 'System Admin', name: 'Admin Account' },
   { email: 'house@wardflow.com', password: 'password123', role: 'Consultant', name: 'Dr. Gregory House' }
 ];
 
