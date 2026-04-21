@@ -230,12 +230,28 @@ async function doTransfer() {
       transfersToday++;
       await refreshFromBackendSnapshot();
       showToast(`Patient ${currentPatientId} transferred`);
+      closeModal('transferModal');
     } catch (error) {
-      alert(`Transfer failed: ${error.message}`);
-      return;
+      // --- BEGIN: Fallback to local prototype mode ---
+      const oldWard = p.ward;
+      const oldTeam = p.team;
+      p.ward = newWard;
+      p.team = newTeam;
+      if (typeof logSystemAction === 'function') {
+        logSystemAction('PATIENT_TRANSFER', currentPatientId, {
+          from: { ward: oldWard, team: oldTeam },
+          to: { ward: newWard, team: newTeam },
+          actor: JSON.parse(sessionStorage.getItem('activeUser') || 'null')?.email || 'SYSTEM'
+        });
+      }
+      transfersToday++;
+      if (typeof saveData === 'function') saveData();
+      if (typeof refreshDashboard === 'function') refreshDashboard();
+      showToast(`Patient transferred to ${newWard} (offline)`);
+      closeModal('transferModal');
+      // --- END: Fallback to local prototype mode ---
     }
   }
-  closeModal('transferModal');
 }
 
 // RECORD TREATMENT: Log doctor treatment for a patient

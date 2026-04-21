@@ -410,7 +410,6 @@ def _resolve_current_user(authorization: str | None = Header(default=None), allo
 
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
-            _ensure_auth_columns(cursor)
             cursor.execute(
                 """
                 SELECT u.id, u.email, u.role, u.permissions, u.linked_staff_id, u.otp_required, s.full_name
@@ -1108,7 +1107,6 @@ def forgot_password_request(payload: ForgotPasswordRequestPayload) -> dict:
 
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
-            _ensure_auth_columns(cursor)
             cursor.execute(
                 """
                 SELECT id, email, pwd_reset_requested_at
@@ -1179,7 +1177,6 @@ def forgot_password_confirm(payload: ForgotPasswordConfirmPayload) -> dict:
 
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
-            _ensure_auth_columns(cursor)
             cursor.execute(
                 """
                 SELECT id, email, pwd_reset_token_hash, pwd_reset_expires_at, pwd_reset_used_at
@@ -2072,10 +2069,16 @@ def admit_patient(payload: AdmitPatientPayload, _auth: dict[str, Any] = Depends(
                     """,
                     (patient_code, payload.full_name.strip(), payload.age, payload.sex.strip(), ward["id"], bed_label, team["id"]),
                 )
-            except psycopg_errors.UniqueViolation:
+            except psycopg_errors.UniqueViolation as exc:
+                constraint = getattr(exc.diag, "constraint_name", "") or ""
+                if "bed_label" in constraint or "ward_id" in constraint:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"Bed allocation race condition detected: {bed_label} in {ward['name']} was occupied by another admission. Please retry.",
+                    )
                 raise HTTPException(
                     status_code=409,
-                    detail=f"Bed allocation race condition detected: {bed_label} in {ward['name']} was occupied by another admission. Please retry.",
+                    detail="Patient code conflict due to concurrent admissions. Please retry.",
                 )
 
             _write_audit(
@@ -2338,6 +2341,7 @@ def record_treatment(patient_code: str, payload: TreatmentPayload, _auth: dict[s
 
 @router.post("/wards")
 def create_ward(payload: NewWardPayload, _auth: dict[str, Any] = Depends(require_current_user)) -> dict:
+    _require_permission(_auth, "manageWards", action="create ward")
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute(
@@ -2379,6 +2383,7 @@ def create_ward(payload: NewWardPayload, _auth: dict[str, Any] = Depends(require
 
 @router.patch("/wards/{ward_name}")
 def update_ward(ward_name: str, payload: WardSettingsPayload, _auth: dict[str, Any] = Depends(require_current_user)) -> dict:
+    _require_permission(_auth, "manageWards", action="update ward")
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             ward = _resolve_ward(cursor, ward_name)
@@ -2417,6 +2422,7 @@ def update_ward(ward_name: str, payload: WardSettingsPayload, _auth: dict[str, A
 
 @router.delete("/wards/{ward_name}")
 def delete_ward(ward_name: str, _auth: dict[str, Any] = Depends(require_current_user)) -> dict:
+    _require_permission(_auth, "manageWards", action="delete ward")
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             ward = _resolve_ward(cursor, ward_name)
@@ -2440,6 +2446,7 @@ def delete_ward(ward_name: str, _auth: dict[str, Any] = Depends(require_current_
 
 @router.post("/teams")
 def create_team(payload: NewTeamPayload, _auth: dict[str, Any] = Depends(require_current_user)) -> dict:
+    _require_permission(_auth, "manageStaff", action="create team")
     team_name = payload.name.strip()
     if not team_name.lower().startswith("team "):
         team_name = f"Team {team_name}"
@@ -2507,6 +2514,7 @@ def create_team(payload: NewTeamPayload, _auth: dict[str, Any] = Depends(require
 
 @router.delete("/teams/{team_name}")
 def delete_team(team_name: str, _auth: dict[str, Any] = Depends(require_current_user)) -> dict:
+    _require_permission(_auth, "manageStaff", action="delete team")
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             team = _resolve_team(cursor, team_name)
@@ -2545,6 +2553,7 @@ def get_roles(_auth: dict[str, Any] = Depends(require_current_user)) -> dict:
 
 @router.post("/roles")
 def create_role(payload: NewRolePayload, _auth: dict[str, Any] = Depends(require_current_user)) -> dict:
+    _require_permission(_auth, "manageAccounts", action="create role")
     role_name = payload.role_name.strip()
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
@@ -2570,6 +2579,7 @@ def create_role(payload: NewRolePayload, _auth: dict[str, Any] = Depends(require
 
 @router.patch("/roles/{role_name}")
 def update_role(role_name: str, payload: RoleTemplatePayload, _auth: dict[str, Any] = Depends(require_current_user)) -> dict:
+    _require_permission(_auth, "manageAccounts", action="update role")
     with get_connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             role_templates = _get_config_value(cursor, "role_templates", _default_role_templates())
@@ -2581,7 +2591,7 @@ def update_role(role_name: str, payload: RoleTemplatePayload, _auth: dict[str, A
             cursor.execute(
                 """
                 UPDATE system_users
-                SET permissions = %s,
+                SET permissions = permissions || %s::jsonb,
                     updated_at = now()
                 WHERE role = %s
                   AND COALESCE((permissions ->> 'customPermissions')::boolean, false) = false

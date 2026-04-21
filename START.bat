@@ -1,8 +1,8 @@
 @echo off
-REM HMS HA Environment - Quick Start Script
+REM WardFlow HMS - Quick Start Script
 
-cd /d "c:\temp\HMS-HA-TEST" || (
-    echo ERROR: folder not found at c:\temp\HMS-HA-TEST
+cd /d "%~dp0" || (
+    echo ERROR: Could not change to script directory
     pause
     exit /b 1
 )

@@ -80,7 +80,7 @@ docker compose -f docker-compose.test.yml up -d --build
 - `POST /api/auth/change-password` updates a temporary password and triggers OTP verification.
 - `POST /api/auth/request-otp` sends a fresh OTP challenge to the signed-in user.
 - `POST /api/auth/verify-otp` verifies the OTP challenge and completes the login flow.
-- `GET /api/aut/me` validates token and returns current user context.
+- `GET /api/auth/me` validates token and returns current user context.
 - `GET /api/wards` returns ward occupancy.
 - `GET /api/teams` returns team workload.
 - `GET /api/staff` returns the staff directory.

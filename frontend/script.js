@@ -167,7 +167,7 @@ function normalizePatientsFromApi(apiPatients) {
     sex: patient.sex,
     ward: patient.ward,
     bed: patient.bed_label,
-    team: normalizeTeamName(patient.team),
+    team: patient.team,
     treatments: Array.isArray(patient.treatments) ? patient.treatments : []
   }));
 }
@@ -315,7 +315,7 @@ function syncData() {
       wardObj.patients.push(`${p.name.split(' ')[0]} ${p.age}y`);
     }
 
-    const teamObj = teams.find(t => t.name.includes(p.team));
+    const teamObj = teams.find(t => t.name === p.team || t.name === 'Team ' + p.team || ('Team ' + t.name) === p.team);
     if (teamObj) {
       teamObj.count++;
       teamObj.patients.push({ name: p.name, age: p.age, ward: p.ward });
