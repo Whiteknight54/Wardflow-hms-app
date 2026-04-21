@@ -353,6 +353,8 @@ async function handleLogin(event) {
         setMainLoginButtonState(false, 'Sign In');
         return;
       }
+      // --- BEGIN MOCK LOGIN FOR OFFLINE/DEMO MODE ---
+    if (err instanceof TypeError || (err && err.message && err.message.includes('Failed to fetch'))) {
       // Simulate a successful login for demo
       const mockUser = {
         email: emailInput,
