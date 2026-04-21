@@ -3,7 +3,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: wardflow-test-postgres
+    container_name: wardflow-postgres
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password123
@@ -14,7 +14,7 @@ services:
       - wardflow_data:/var/lib/postgresql/data
       - ./backend/sql:/docker-entrypoint-initdb.d
     networks:
-      - pgnet_test
+      - pgnet
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d wardflow"]
       interval: 10s
@@ -25,7 +25,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    container_name: wardflow-test-api
+    container_name: wardflow-api
     environment:
       DATABASE_URL: postgresql://admin:password123@postgres:5432/wardflow
       CORS_ORIGINS: http://localhost:5500,http://127.0.0.1:5500,null
@@ -45,7 +45,7 @@ services:
     ports:
       - "8001:8000"
     networks:
-      - pgnet_test
+      - pgnet
     depends_on:
       postgres:
         condition: service_healthy
@@ -57,27 +57,27 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: wardflow-test-pgadmin
+    container_name: wardflow-pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@wardflow.test
+      PGADMIN_DEFAULT_EMAIL: admin@wardflow.com
       PGADMIN_DEFAULT_PASSWORD: admin123
     ports:
       - "5051:80"
     networks:
-      - pgnet_test
+      - pgnet
     depends_on:
       - postgres
 
   frontend:
     image: nginx:1.27-alpine
-    container_name: wardflow-test-frontend
+    container_name: wardflow-frontend
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     ports:
       - "5500:80"
     networks:
-      - pgnet_test
+      - pgnet
     depends_on:
       api:
         condition: service_started
@@ -91,5 +91,6 @@ volumes:
   wardflow_data:
 
 networks:
-  pgnet_test:
+  pgnet:
     driver: bridge
+  # pgnet_test network removed

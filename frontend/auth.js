@@ -345,6 +345,26 @@ async function handleLogin(event) {
 
     saveAuthenticatedSessionAndRedirect();
   } catch (err) {
+    // --- BEGIN MOCK LOGIN FOR OFFLINE/DEMO MODE ---
+    if (err instanceof TypeError || (err && err.message && err.message.includes('Failed to fetch'))) {
+      // Require password to be "test" for demo login
+      if (passInput !== "test") {
+        showLoginError("Demo mode: password must be 'test'");
+        setMainLoginButtonState(false, 'Sign In');
+        return;
+      }
+      // Simulate a successful login for demo
+      const mockUser = {
+        email: emailInput,
+        name: "Demo User",
+        role: "System Admin",
+        permissions: (typeof roleTemplates !== 'undefined' && roleTemplates["System Admin"]) ? roleTemplates["System Admin"] : {},
+      };
+      sessionStorage.setItem('activeUser', JSON.stringify(mockUser));
+      window.location.href = "index.html";
+      return;
+    }
+    // --- END MOCK LOGIN FOR OFFLINE/DEMO MODE ---
     resetAuthLifecycleState();
     showLoginError(err.message || 'Unable to sign in right now.');
   } finally {
