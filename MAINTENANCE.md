@@ -178,7 +178,7 @@ Purpose: login/logout and role template management.
 Key points:
 - `roleTemplates` now loads from `wardflow_role_templates` and merges with defaults.
 - Users without `customPermissions` sync to their role template on login.
-- The seeded test users continue to work as local fallback auth records in the test stack.
+- The seeded admin users continue to work as local fallback auth records for static/demo deployments. Remove or secure these for production.
 
 Important flags in role templates:
 - `viewGlobalPatients`

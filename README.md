@@ -20,7 +20,7 @@ User data (database contents) is stored in a Docker named volume: `wardflow_data
 WardFlow is a Hospital Management System (HMS) for hospital administrators and ward clerks, focused entirely on patient logistics, capacity management, and team-based care tracking. This system explicitly excludes clinical/medical records (EHR).
 
 ### Architecture Phase
-**Current:** Frontend served from a local static server with a Dockerized Python API + PostgreSQL test stack  
+**Current:** Frontend served from a containerized Nginx server with a Dockerized Python API + PostgreSQL deployment stack  
 **In Progress:** API-driven refactor with server-side auth, RBAC, and transactional consistency  
 **Target:** Production-ready system with hardened deployment defaults and audit coverage  
 
@@ -47,9 +47,9 @@ WardFlow is a Hospital Management System (HMS) for hospital administrators and w
 * **Browser Storage:** localStorage (seed data) + sessionStorage (session state)
 
 ### Runtime Environment
-* **Frontend server:** Nginx container at `http://127.0.0.1:5500`
-* **Backend API:** `http://127.0.0.1:8001/api`
-* **Test database:** PostgreSQL on host port `5433`
+* **Frontend server:** Nginx container at your deployment URL (e.g., `https://yourdomain.com`)
+* **Backend API:** `/api` (proxied by Nginx)
+* **Database:** PostgreSQL (managed in Docker, not exposed to public)
 
 ### Backend (In Development)
 * **Framework:** Python (FastAPI or Flask) with RESTful API
@@ -76,16 +76,18 @@ WardFlow is a Hospital Management System (HMS) for hospital administrators and w
   This will build and launch all containers, then print the login URL for you to open in your browser.
 
 ### Alternative: Manual Docker Compose
-1. Start the test stack:
+1. Start the deployment stack:
   ```bash
-  docker compose -f docker-compose.test.yml up -d --build
+  docker compose up -d --build
   ```
-2. Open `http://127.0.0.1:5500/login.html` in your browser.
+2. Open your deployment URL (e.g., `https://yourdomain.com/login.html`) in your browser.
 
 ### Login Credentials
 Use credentials:
   - Email: `admin@wardflow.com` / Password: `password123`
-  - Email: `house@wardflow.com` / Password: `password123`
+  - Email: `wardflowhms@gmail.com` / Password: `password123`
+
+  - Email: `wardflowhms@gmail.com` / Password: `password123`
 
 The stack includes an Nginx frontend container that serves static assets and proxies `/api/*` to the API service.
 
@@ -168,3 +170,33 @@ docker compose exec api python backend/scripts/seed.py
 - Password: password123
 
 This is used for direct database access (e.g., via psql or pgAdmin).
+
+# Admin Lifecycle Test Flow (QA Checklist)
+
+This checklist describes a full end-to-end test of the WardFlow application as an admin user, covering all major features and role-based access control:
+
+1. **Admin Login:**
+   - Log in as admin (e.g., `admin@wardflow.com` / `password123`).
+2. **Dashboard KPIs:**
+   - Interact with dashboard KPIs and verify correct metrics.
+3. **Dashboard Navigation:**
+   - Use dashboard to navigate to operations and admissions/wardflow.
+4. **Admissions:**
+   - Add patient details, select bed, and admit patient.
+   - Click on patient column to view patient details.
+5. **Patient Transfer:**
+   - Click transfer on a patient, fill transfer reason, select new ward and team, and complete transfer.
+6. **Analytics:**
+   - Navigate to analytics, view patients, and click on 'recently admitted' to see recent admissions.
+7. **System Management:**
+   - Interact with system management features and generate a report.
+8. **Admissions/Ward:**
+   - Return to admissions/ward, admit new patients.
+9. **Staff Management:**
+   - Add new staff, choose role, link staff, and navigate patient list.
+10. **Discharge:**
+    - Discharge a patient.
+11. **Logout/Login as User:**
+    - Log out, log in as a non-admin user, and confirm role-based access control (restricted features).
+
+This flow should be completed after each deployment to ensure all critical features and permissions are working as expected.

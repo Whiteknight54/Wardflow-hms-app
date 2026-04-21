@@ -345,6 +345,14 @@ async function handleLogin(event) {
 
     saveAuthenticatedSessionAndRedirect();
   } catch (err) {
+    // --- BEGIN MOCK LOGIN FOR OFFLINE/DEMO MODE ---
+    if (err instanceof TypeError || (err && err.message && err.message.includes('Failed to fetch'))) {
+      // Require password to be "test" for demo login
+      if (passInput !== "test") {
+        showLoginError("Demo mode: password must be 'test'");
+        setMainLoginButtonState(false, 'Sign In');
+        return;
+      }
       // --- BEGIN MOCK LOGIN FOR OFFLINE/DEMO MODE ---
     if (err instanceof TypeError || (err && err.message && err.message.includes('Failed to fetch'))) {
       // Simulate a successful login for demo
