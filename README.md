@@ -60,36 +60,78 @@ WardFlow is a Hospital Management System (HMS) for hospital administrators and w
 
 ## How to Run (Current Environment)
 
-
 ### Recommended: One-Step Startup Script (macOS/Linux)
 1. In the project directory, run:
-  ```bash
-  ./start-wardflow.sh
-  ```
-  This will build and launch all containers, then open the login page in your default browser.
+   ```bash
+   ./start-wardflow.sh
+   ```
+   This will build and launch all containers, then open the login page in your default browser.
 
 ### Windows Quick Start
 1. In the project directory, double-click or run:
-  ```bat
-  START-TEST.bat
-  ```
-  This will build and launch all containers, then print the login URL for you to open in your browser.
+   ```bat
+   START.bat
+   ```
+   This will build and launch all containers, then print the login URL for you to open in your browser.
 
 ### Alternative: Manual Docker Compose
 1. Start the deployment stack:
-  ```bash
-  docker compose up -d --build
-  ```
-2. Open your deployment URL (e.g., `https://yourdomain.com/login.html`) in your browser.
+   ```bash
+   docker-compose up -d --build
+   ```
+2. Open your deployment URL (see below) in your browser.
+
+### Environment Setup (.env files)
+
+**Required for backend API to function:**
+
+1. Copy the environment template:
+   ```bash
+   cp env.example backend/.env
+   ```
+   Or for test/dev, you can use `.env.test` as a reference.
+
+2. Edit `backend/.env` and set values for:
+   - `DATABASE_URL` (default is fine for Docker Compose)
+   - `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL` (for email features)
+   - `OTP_DEV_FALLBACK=false` (set to `true` for local dev without email)
+
+3. The backend will not start if `backend/.env` is missing or incomplete.
+
+4. Restart API after changes:
+   ```bash
+   docker-compose up -d --build api
+   ```
+
+### Real SMTP Setup (Password Reset / OTP Emails)
+See above for `.env` setup. You must use a Gmail App Password for SMTP.
+
+### Local Development URLs and Ports
+
+- **Frontend:** http://localhost:5500
+- **Backend API:** http://localhost:8001/api
+- **pgAdmin:** http://localhost:5051  
+  - Login: `admin@wardflow.com` / `admin123` (see `docker-compose.yml`)
+
+### Notes on Environment Files
+- `env.example` is a template. Copy it to `backend/.env` and edit as needed.
+- `.env.test` is for test/dev and not used by default Docker Compose.
+- `backend/.env` is gitignored and required for backend API.
 
 ### Login Credentials
 Use credentials:
   - Email: `admin@wardflow.com` / Password: `password123`
   - Email: `wardflowhms@gmail.com` / Password: `password123`
-
-  - Email: `wardflowhms@gmail.com` / Password: `password123`
+  - Email: `house@wardflow.com` / Password: `password123` (Consultant)
+  - Email: `consultant@wardflow.com` / Password: `password123` (Consultant)
+  - Email: `seniordoctor@wardflow.com` / Password: `password123` (Senior Doctor profile via Consultant role)
+  - Email: `jdoctor@wardflow.com` / Password: `password123` (Junior Doctor)
+  - Email: `wmanager@wardflow.com` / Password: `password123` (Ward Manager)
+  - Email: `nurse@wardflow.com` / Password: `password123` (Nurse profile via Ward Manager role)
 
 The stack includes an Nginx frontend container that serves static assets and proxies `/api/*` to the API service.
+
+If these admin accounts are missing, the API now auto-creates them on startup using `BOOTSTRAP_ADMIN_EMAILS` and `BOOTSTRAP_ADMIN_PASSWORD` (see `docker-compose.yml` / `env.example`). Existing users are not overwritten.
 
 ## Backend Integration Roadmap
 See [BACKEND-MIGRATION.md](#) for detailed API contracts and integration phases.
@@ -159,17 +201,25 @@ Start from [schema.sql](schema.sql) (3NF normalized for PostgreSQL).
 - Password: password123
 - Role: System Admin
 
+## Additional Seeded Application Users
+- Consultant: `house@wardflow.com` / `password123`
+- Consultant: `consultant@wardflow.com` / `password123`
+- Senior Doctor profile: `seniordoctor@wardflow.com` / `password123`
+- Junior Doctor: `jdoctor@wardflow.com` / `password123`
+- Ward Manager: `wmanager@wardflow.com` / `password123`
+- Nurse profile: `nurse@wardflow.com` / `password123`
+
 These accounts are seeded by default. If you need to reseed, run:
 
 ```
-docker compose exec api python backend/scripts/seed.py
+docker-compose exec api python backend/scripts/seed.py
 ```
 
 ## Database Admin User
 - Username: admin
 - Password: password123
 
-This is used for direct database access (e.g., via psql or pgAdmin).
+This is used for direct database access (e.g., via psql or pgAdmin at http://localhost:5051).
 
 # Admin Lifecycle Test Flow (QA Checklist)
 
@@ -200,3 +250,4 @@ This checklist describes a full end-to-end test of the WardFlow application as a
     - Log out, log in as a non-admin user, and confirm role-based access control (restricted features).
 
 This flow should be completed after each deployment to ensure all critical features and permissions are working as expected.
+# hospital
