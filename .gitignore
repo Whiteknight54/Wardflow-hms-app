@@ -1,0 +1,49 @@
+# Node modules
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm/
+
+# Optional eslint cache
+.eslintcache
+
+# dotenv environment variables file
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+/**
+ * This code is part of the Wardflow-hms-app repository, which appears to be a hospital management system (HMS) application.
+ * The selected code's purpose is not specified in your message, but based on the context of your environment, it likely handles
+ * a specific feature or functionality related to hospital or ward management, such as patient tracking, staff assignments,
+ * or workflow automation within the HMS.
+ *
+ * The documentation comment would provide details about the function, class, or module's role in the application,
+ * its parameters, return values, and any side effects or dependencies it may have within the Wardflow-hms-app.
+ *
+ * For a more precise documentation comment, please provide the actual code selection.
+ */
