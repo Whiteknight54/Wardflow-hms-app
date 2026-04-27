@@ -1013,9 +1013,10 @@ tr:hover td { background: var(--color-background-secondary); }
    ========================================== */
 .charts-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 24px;
   margin-top: 16px;
+  align-items: start;
 }
 
 .chart-card {
@@ -1024,6 +1025,8 @@ tr:hover td { background: var(--color-background-secondary); }
   border-radius: var(--border-radius-lg);
   border: 0.5px solid var(--color-border-tertiary);
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .chart-card h4 {
@@ -1037,6 +1040,10 @@ tr:hover td { background: var(--color-background-secondary); }
   position: relative;
   height: 300px;
   width: 100%;
+}
+
+.chart-wrapper canvas {
+  max-width: 100%;
 }
 
 /* ==========================================

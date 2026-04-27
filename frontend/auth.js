@@ -153,6 +153,7 @@ const authLifecycleState = {
   requiresOtp: false,
   otpResendCooldownUntil: 0,
 };
+const DEMO_MODE = false;
 
 function setMainLoginButtonState(isBusy, label) {
   const btn = document.getElementById('loginBtn');
@@ -345,28 +346,24 @@ async function handleLogin(event) {
 
     saveAuthenticatedSessionAndRedirect();
   } catch (err) {
-    // --- BEGIN MOCK LOGIN FOR OFFLINE/DEMO MODE ---
-    if (err instanceof TypeError || (err && err.message && err.message.includes('Failed to fetch'))) {
-      // Require password to be "test" for demo login
-      if (passInput !== "test") {
+    const isNetworkError = err instanceof TypeError || (err && err.message && err.message.includes('Failed to fetch'));
+    if (DEMO_MODE && isNetworkError) {
+      if (passInput !== 'test') {
         showLoginError("Demo mode: password must be 'test'");
-        setMainLoginButtonState(false, 'Sign In');
         return;
       }
-      // --- BEGIN MOCK LOGIN FOR OFFLINE/DEMO MODE ---
-    if (err instanceof TypeError || (err && err.message && err.message.includes('Failed to fetch'))) {
-      // Simulate a successful login for demo
+
       const mockUser = {
         email: emailInput,
-        name: "Demo User",
-        role: "System Admin",
-        permissions: (typeof roleTemplates !== 'undefined' && roleTemplates["System Admin"]) ? roleTemplates["System Admin"] : {},
+        name: 'Demo User',
+        role: 'System Admin',
+        permissions: (typeof roleTemplates !== 'undefined' && roleTemplates['System Admin']) ? roleTemplates['System Admin'] : {},
       };
       sessionStorage.setItem('activeUser', JSON.stringify(mockUser));
-      window.location.href = "index.html";
+      window.location.href = 'index.html';
       return;
     }
-    // --- END MOCK LOGIN FOR OFFLINE/DEMO MODE ---
+
     resetAuthLifecycleState();
     showLoginError(err.message || 'Unable to sign in right now.');
   } finally {
@@ -606,3 +603,4 @@ function logout() {
 }
 
 startSessionTimeoutGuard();
+window.logout = logout;

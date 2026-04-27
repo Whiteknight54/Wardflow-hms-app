@@ -8,7 +8,7 @@ Current test database URL:
 
 `postgresql://admin:password123@postgres:5432/wardflow`
 
-When the API runs in `docker-compose.test.yml`, the browser-facing frontend should call `http://127.0.0.1:8001/api`.
+When the API runs in `docker-compose.yml`, the browser-facing frontend should call `http://127.0.0.1:8001/api`.
 
 ## SMTP / OTP
 
@@ -61,7 +61,7 @@ If you need to rotate or update the password, repeat the steps above and update 
 1. Start the current test stack from the repo root:
 
 ```bash
-docker compose -f docker-compose.test.yml up -d --build
+docker-compose -f docker-compose.test.yml up -d --build
 ```
 
 2. The API container is exposed on host port `8001` and serves `/api/*` routes.
@@ -121,3 +121,14 @@ For local development, reseed users when needed:
 ```bash
 docker exec wardflow-test-api python backend/scripts/seed.py
 ```
+
+## Seeded Login Accounts (Application UI)
+
+- `admin@wardflow.com` / `password123` (System Admin)
+- `wardflowhms@gmail.com` / `password123` (System Admin)
+- `house@wardflow.com` / `password123` (Consultant)
+- `consultant@wardflow.com` / `password123` (Consultant)
+- `seniordoctor@wardflow.com` / `password123` (Senior Doctor profile via Consultant role)
+- `jdoctor@wardflow.com` / `password123` (Junior Doctor)
+- `wmanager@wardflow.com` / `password123` (Ward Manager)
+- `nurse@wardflow.com` / `password123` (Nurse profile via Ward Manager role)

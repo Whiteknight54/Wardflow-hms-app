@@ -18,6 +18,8 @@ from psycopg.rows import dict_row
 from psycopg.types.json import Json
 
 from .config import (
+    BOOTSTRAP_ADMIN_EMAILS,
+    BOOTSTRAP_ADMIN_PASSWORD,
     JWT_ALGORITHM,
     JWT_EXPIRES_MINUTES,
     RESET_REQUEST_MIN_SECONDS,
@@ -332,10 +334,37 @@ def _ensure_auth_columns(cursor: Any) -> None:
     cursor.execute("ALTER TABLE system_users ADD COLUMN IF NOT EXISTS pwd_reset_used_at timestamptz NULL")
 
 
+def _ensure_bootstrap_admin_users(cursor: Any) -> None:
+    if not BOOTSTRAP_ADMIN_EMAILS:
+        return
+
+    for email in BOOTSTRAP_ADMIN_EMAILS:
+        normalized_email = email.strip().lower()
+        if not normalized_email:
+            continue
+
+        cursor.execute(
+            "SELECT 1 FROM system_users WHERE LOWER(email) = LOWER(%s) LIMIT 1",
+            (normalized_email,),
+        )
+        if cursor.fetchone():
+            continue
+
+        password_hash = bcrypt.hashpw(BOOTSTRAP_ADMIN_PASSWORD.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        cursor.execute(
+            """
+            INSERT INTO system_users (email, password_hash, role, linked_staff_id, permissions, must_change_password, otp_required)
+            VALUES (%s, %s, %s, NULL, %s::jsonb, false, false)
+            """,
+            (normalized_email, password_hash, "System Admin", "{}"),
+        )
+
+
 def ensure_auth_schema() -> None:
     with get_connection() as connection:
         with connection.cursor() as cursor:
             _ensure_auth_columns(cursor)
+            _ensure_bootstrap_admin_users(cursor)
 
 
 def _ensure_audit_table(cursor: Any) -> None:

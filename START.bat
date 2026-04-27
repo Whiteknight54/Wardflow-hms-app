@@ -18,7 +18,7 @@ echo - wardflow-api (port 8001)
 echo - wardflow-pgadmin (port 5050)
 echo.
 
-docker compose -f docker-compose.yml up -d --build
+docker-compose -f docker-compose.yml up -d --build
 
 if errorlevel 1 (
     echo ERROR: Failed to start containers
@@ -49,14 +49,16 @@ echo.
 echo Credentials:
 echo - Admin: admin@wardflow.com / password123
 echo - Consultant: consultant@wardflow.com / password123
+echo - Senior Doctor: seniordoctor@wardflow.com / password123
 echo - Junior Doctor: jdoctor@wardflow.com / password123
 echo - Ward Manager: wmanager@wardflow.com / password123
+echo - Nurse: nurse@wardflow.com / password123
 echo.
 echo pgAdmin Login:
 echo - Email: admin@wardflow.com
 echo - Password: admin123
 echo.
-echo To stop: docker compose -f docker-compose.yml down
-echo To stop + clear data: docker compose -f docker-compose.yml down -v
+echo To stop: docker-compose -f docker-compose.yml down
+echo To stop + clear data: docker-compose -f docker-compose.yml down -v
 echo.
 pause

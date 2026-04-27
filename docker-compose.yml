@@ -26,22 +26,26 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     container_name: wardflow-api
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql://admin:password123@postgres:5432/wardflow
-      CORS_ORIGINS: http://localhost:5500,http://127.0.0.1:5500,null
-      JWT_SECRET: test-secret-change-in-production
-      JWT_ALGORITHM: HS256
-      JWT_EXPIRES_MINUTES: 120
-      SMTP_HOST: smtp.gmail.com
-      SMTP_PORT: 587
-      SMTP_USERNAME: wardflowhms@gmail.com
-      SMTP_PASSWORD: "lare jwqf ovsi mraf"
-      SMTP_FROM_EMAIL: wardflowhms@gmail.com
-      SMTP_USE_TLS: "true"
-      OTP_RESEND_MIN_SECONDS: 30
-      RESET_TOKEN_EXPIRES_MINUTES: 30
-      RESET_REQUEST_MIN_SECONDS: 60
-      OTP_DEV_FALLBACK: "false"
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5500,http://127.0.0.1:5500,null}
+      JWT_SECRET: ${JWT_SECRET:-test-secret-change-in-production}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_EXPIRES_MINUTES: ${JWT_EXPIRES_MINUTES:-120}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      OTP_RESEND_MIN_SECONDS: ${OTP_RESEND_MIN_SECONDS:-30}
+      RESET_TOKEN_EXPIRES_MINUTES: ${RESET_TOKEN_EXPIRES_MINUTES:-30}
+      RESET_REQUEST_MIN_SECONDS: ${RESET_REQUEST_MIN_SECONDS:-60}
+      OTP_DEV_FALLBACK: ${OTP_DEV_FALLBACK:-false}
+      BOOTSTRAP_ADMIN_EMAILS: ${BOOTSTRAP_ADMIN_EMAILS:-admin@wardflow.com,wardflowhms@gmail.com}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-password123}
     ports:
       - "8001:8000"
     networks:

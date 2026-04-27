@@ -223,52 +223,67 @@ async function fetchBackendJson(path, options = {}) {
 }
 
 async function loadBackendState() {
-  try {
-    const [patientsResp, wardsResp, teamsResp, staffResp, rolesResp, permsResp] = await Promise.all([
-      fetchBackendJson('/patients?limit=500'),
-      fetchBackendJson('/wards'),
-      fetchBackendJson('/teams'),
-      fetchBackendJson('/staff'),
-      fetchBackendJson('/roles'),
-      fetchBackendJson('/system-perms')
-    ]);
+  const requests = await Promise.allSettled([
+    fetchBackendJson('/patients?limit=500'),
+    fetchBackendJson('/wards'),
+    fetchBackendJson('/teams'),
+    fetchBackendJson('/staff'),
+    fetchBackendJson('/roles'),
+    fetchBackendJson('/system-perms')
+  ]);
 
-    if (patientsResp && patientsResp.success) {
-      patients = normalizePatientsFromApi(patientsResp.data);
-    }
+  const [patientsReq, wardsReq, teamsReq, staffReq, rolesReq, permsReq] = requests;
+  const requiredRequests = [patientsReq, wardsReq, teamsReq, staffReq];
+  const hasRequiredFailure = requiredRequests.some(req => req.status === 'rejected');
 
-    if (wardsResp && wardsResp.success) {
-      wardConfigs = normalizeWardsFromApi(wardsResp.data);
-    }
-
-    if (teamsResp && teamsResp.success) {
-      teams = normalizeTeamsFromApi(teamsResp.data);
-    }
-
-    if (staffResp && staffResp.success) {
-      doctors = normalizeDoctorsFromApi(staffResp.data);
-    }
-
-    if (rolesResp && rolesResp.success && rolesResp.data) {
-      availableRoles = Array.isArray(rolesResp.data.available_roles) ? rolesResp.data.available_roles : availableRoles;
-
-      const incomingTemplates = rolesResp.data.role_templates || {};
-      Object.keys(roleTemplates).forEach(k => delete roleTemplates[k]);
-      Object.entries(incomingTemplates).forEach(([k, v]) => {
-        roleTemplates[k] = v;
-      });
-    }
-
-    if (permsResp && permsResp.success && permsResp.data) {
-      sysPerms = { ...sysPerms, ...permsResp.data };
-    }
-
-    setDataSourceBanner(false);
-    return true;
-  } catch (error) {
-    setDataSourceBanner(true, error.message || 'backend unavailable');
+  if (hasRequiredFailure) {
+    const firstFailure = requiredRequests.find(req => req.status === 'rejected');
+    const reason = firstFailure && firstFailure.status === 'rejected'
+      ? (firstFailure.reason?.message || 'backend unavailable')
+      : 'backend unavailable';
+    setDataSourceBanner(true, reason);
     return false;
   }
+
+  const patientsResp = patientsReq.status === 'fulfilled' ? patientsReq.value : null;
+  const wardsResp = wardsReq.status === 'fulfilled' ? wardsReq.value : null;
+  const teamsResp = teamsReq.status === 'fulfilled' ? teamsReq.value : null;
+  const staffResp = staffReq.status === 'fulfilled' ? staffReq.value : null;
+  const rolesResp = rolesReq.status === 'fulfilled' ? rolesReq.value : null;
+  const permsResp = permsReq.status === 'fulfilled' ? permsReq.value : null;
+
+  if (patientsResp && patientsResp.success) {
+    patients = normalizePatientsFromApi(patientsResp.data);
+  }
+
+  if (wardsResp && wardsResp.success) {
+    wardConfigs = normalizeWardsFromApi(wardsResp.data);
+  }
+
+  if (teamsResp && teamsResp.success) {
+    teams = normalizeTeamsFromApi(teamsResp.data);
+  }
+
+  if (staffResp && staffResp.success) {
+    doctors = normalizeDoctorsFromApi(staffResp.data);
+  }
+
+  if (rolesResp && rolesResp.success && rolesResp.data) {
+    availableRoles = Array.isArray(rolesResp.data.available_roles) ? rolesResp.data.available_roles : availableRoles;
+
+    const incomingTemplates = rolesResp.data.role_templates || {};
+    Object.keys(roleTemplates).forEach(k => delete roleTemplates[k]);
+    Object.entries(incomingTemplates).forEach(([k, v]) => {
+      roleTemplates[k] = v;
+    });
+  }
+
+  if (permsResp && permsResp.success && permsResp.data) {
+    sysPerms = { ...sysPerms, ...permsResp.data };
+  }
+
+  setDataSourceBanner(false);
+  return true;
 }
 
 // ====== AUDIT LOGGING ======
