@@ -38,3 +38,12 @@ OTP_ALWAYS_REQUIRED = _env("OTP_ALWAYS_REQUIRED", "false").lower() == "true"
 
 RESET_TOKEN_EXPIRES_MINUTES = int(_env("RESET_TOKEN_EXPIRES_MINUTES", "30"))
 RESET_REQUEST_MIN_SECONDS = int(_env("RESET_REQUEST_MIN_SECONDS", "60"))
+
+# Bootstrap admin users — comma-separated emails auto-created as System Admin on startup.
+# Existing users are never overwritten.
+BOOTSTRAP_ADMIN_EMAILS: list[str] = [
+    e.strip()
+    for e in _env("BOOTSTRAP_ADMIN_EMAILS", "admin@wardflow.com").split(",")
+    if e.strip()
+]
+BOOTSTRAP_ADMIN_PASSWORD = _env("BOOTSTRAP_ADMIN_PASSWORD", "password123")
