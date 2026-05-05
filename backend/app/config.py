@@ -1,4 +1,12 @@
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load backend/.env when running locally (outside Docker).
+# In Docker, environment vars are injected by compose and load_dotenv is a no-op.
+_env_file = Path(__file__).resolve().parents[1] / ".env"
+load_dotenv(_env_file, override=False)
 
 
 def _env(name: str, default: str) -> str:
