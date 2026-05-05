@@ -2225,7 +2225,8 @@ def discharge_patient(patient_code: str, _auth: dict[str, Any] = Depends(require
                 """
                 UPDATE patients
                 SET discharged_at = now(),
-                    updated_at = now()
+                    bed_label     = NULL,
+                    updated_at    = now()
                 WHERE patient_code = %s
                 """,
                 (patient_code,),
