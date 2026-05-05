@@ -16,6 +16,8 @@ jspm_packages/
 
 # dotenv environment variables file
 .env
+.env.*
+backend/.env
 
 # Logs
 logs
@@ -36,3 +38,10 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
