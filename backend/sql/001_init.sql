@@ -54,13 +54,18 @@ CREATE TABLE IF NOT EXISTS patients (
     age integer NOT NULL CHECK (age >= 0),
     sex text NOT NULL,
     ward_id uuid NOT NULL REFERENCES wards(id) ON DELETE RESTRICT,
-    bed_label text NOT NULL,
+    bed_label text NULL,
     team_id uuid NOT NULL REFERENCES teams(id) ON DELETE RESTRICT,
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
-    discharged_at timestamptz NULL,
-    UNIQUE (ward_id, bed_label)
+    discharged_at timestamptz NULL
 );
+
+-- Only enforce bed uniqueness for active (non-discharged) patients.
+-- Discharged patients have bed_label set to NULL, so they never block re-admission.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_patients_active_bed
+    ON patients (ward_id, bed_label)
+    WHERE discharged_at IS NULL AND bed_label IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS treatments (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
