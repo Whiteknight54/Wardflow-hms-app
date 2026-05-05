@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -6,7 +8,18 @@ from .api import ensure_audit_schema, ensure_auth_schema, router
 from .db import close_pool, open_pool
 
 
-app = FastAPI(title="WardFlow API", version="0.1.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    open_pool()
+    ensure_auth_schema()
+    ensure_audit_schema()
+    yield
+    # Shutdown
+    close_pool()
+
+
+app = FastAPI(title="WardFlow API", version="0.1.0", lifespan=lifespan)
 
 # Accept local dev origins across ports (Live Server/Vite/etc.) and file:// origins (`null`).
 local_dev_origin_regex = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$|^null$"
@@ -21,18 +34,6 @@ app.add_middleware(
 )
 
 app.include_router(router)
-
-
-@app.on_event("startup")
-def startup() -> None:
-    open_pool()
-    ensure_auth_schema()
-    ensure_audit_schema()
-
-
-@app.on_event("shutdown")
-def shutdown() -> None:
-    close_pool()
 
 
 @app.get("/")
