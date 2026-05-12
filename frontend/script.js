@@ -365,6 +365,20 @@ let admissionsToday = 0;
 let transfersToday = 0;
 let dischargedToday = 0;
 
+async function loadStatsFromBackend() {
+  try {
+    const res = await apiRequest('/stats');
+    if (res && res.data) {
+      admissionsToday = res.data.admissionsToday ?? 0;
+      dischargedToday = res.data.dischargedToday ?? 0;
+      transfersToday  = res.data.transfersToday  ?? 0;
+    }
+  } catch (_) {
+    // Backend unavailable — keep in-memory values (offline/prototype mode)
+  }
+  updateAdmissionsStats();
+}
+
 function updateGlobalStats() {
   const occEl = document.getElementById('globalOccupancy');
   const teamsEl = document.getElementById('globalTeams');
@@ -880,7 +894,7 @@ async function initializeApp() {
   renderWards();
   renderTeams();
   updateGlobalStats();
-  updateAdmissionsStats();
+  loadStatsFromBackend();   // fetches today's real counts from /api/stats
   updateOperationalKpis();
   applySecurityAndProfile();
   applyStaticTranslations();
