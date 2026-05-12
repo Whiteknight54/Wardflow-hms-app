@@ -215,8 +215,17 @@ async function fetchBackendJson(path, options = {}) {
     ...options
   });
 
+  if (response.status === 401) {
+    // Token expired or invalid — clear session and send to login
+    sessionStorage.removeItem('wardflow_access_token');
+    sessionStorage.removeItem('activeUser');
+    window.location.href = 'login.html?reason=session_expired';
+    throw new Error('Session expired');
+  }
+
   if (!response.ok) {
-    throw new Error(`Backend request failed: ${response.status}`);
+    const errBody = await response.json().catch(() => ({}));
+    throw new Error(errBody.detail || `Request failed (${response.status})`);
   }
 
   return response.json();
@@ -531,12 +540,15 @@ function showToast(message, type = 'success') {
   // Trigger CSS transition after insertion.
   requestAnimationFrame(() => toast.classList.add('show'));
 
+  // Errors stay visible longer so users have time to read them.
+  const duration = type === 'error' ? 4500 : 2200;
+
   setTimeout(() => {
     toast.classList.remove('show');
     setTimeout(() => {
       if (toast.parentNode) toast.parentNode.removeChild(toast);
     }, 220);
-  }, 2200);
+  }, duration);
 }
 
 if (localStorage.getItem('wardflow_theme') === 'dark') {
