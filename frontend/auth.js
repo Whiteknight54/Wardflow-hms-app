@@ -57,8 +57,9 @@ function startSessionTimeoutGuard() {
   const endSessionForTimeout = () => {
     sessionStorage.removeItem('activeUser');
     sessionStorage.removeItem(ACTIVITY_KEY);
-    alert(`Session expired after ${timeoutMinutes} minute(s) of inactivity. Please sign in again.`);
-    window.location.href = 'login.html';
+    sessionStorage.removeItem('wardflow_access_token');
+    sessionStorage.removeItem('activeUser');
+    window.location.href = `login.html?reason=idle_timeout&minutes=${timeoutMinutes}`;
   };
 
   ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach(evt => {
@@ -144,6 +145,18 @@ Object.keys(storedRoleTemplates).forEach(role => {
 // LOGIN FUNCTION: Validates credentials, checks for auto-upgrade, sets session
 // Called by form submit on login.html
 // Flow: Validate email/password -> Check permissions -> Auto-upgrade if needed -> Save to sessionStorage -> Redirect
+
+// Show a message on the login page if redirected due to session/token expiry
+if (window.location.href.includes('login.html')) {
+  const params = new URLSearchParams(window.location.search);
+  const reason = params.get('reason');
+  if (reason === 'idle_timeout') {
+    const mins = params.get('minutes') || '30';
+    document.addEventListener('DOMContentLoaded', () => showLoginError(`Your session expired after ${mins} minutes of inactivity. Please sign in again.`));
+  } else if (reason === 'session_expired') {
+    document.addEventListener('DOMContentLoaded', () => showLoginError('Your session has expired. Please sign in again.'));
+  }
+}
 
 const authLifecycleState = {
   user: null,
