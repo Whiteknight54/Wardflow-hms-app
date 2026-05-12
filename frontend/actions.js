@@ -141,6 +141,7 @@ async function admitPatient() {
 
     admissionsToday++;
     await refreshFromBackendSnapshot();
+    await loadStatsFromBackend();
 
     closeModal('admitModal');
     document.getElementById('admitName').value = '';
@@ -177,6 +178,7 @@ async function dischargePatient() {
 
     dischargedToday++;
     await refreshFromBackendSnapshot();
+    await loadStatsFromBackend();
     showToast(`Patient ${currentPatientId} discharged`);
   } catch (error) {
     alert(`Discharge failed: ${error.message}`);
@@ -229,6 +231,7 @@ async function doTransfer() {
 
       transfersToday++;
       await refreshFromBackendSnapshot();
+      await loadStatsFromBackend();
       showToast(`Patient ${currentPatientId} transferred`);
       closeModal('transferModal');
     } catch (error) {
