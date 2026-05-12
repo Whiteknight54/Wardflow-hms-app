@@ -167,7 +167,7 @@ async function admitPatient() {
 // Called by: "Discharge" button in patient detail modal
 async function dischargePatient() {
   if (!getPerms().discharge) { showToast('You do not have permission to discharge patients.', 'error'); return; }
-  if (!confirm('Discharge this patient? They will be removed from the board.')) return;
+  if (!confirm('Discharge this patient?\n\nTheir record will be retained for 48 hours before permanent deletion, supporting emergency re-admission if required.')) return;
 
   const dischargeBtn = document.querySelector('#detailModal .btn-danger, #detailModal [onclick*="dischargePatient"]');
   if (dischargeBtn) { dischargeBtn.disabled = true; dischargeBtn.textContent = 'Discharging…'; }
@@ -187,7 +187,7 @@ async function dischargePatient() {
     dischargedToday++;
     await refreshFromBackendSnapshot();
     await loadStatsFromBackend();
-    showToast(`Patient ${currentPatientId} discharged`);
+    showToast(`Patient discharged — record retained for 48 hours`);
     closeModal('detailModal');
   } catch (error) {
     showToast(`Discharge failed: ${error.message}`, 'error');
