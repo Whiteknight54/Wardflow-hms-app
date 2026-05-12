@@ -1274,6 +1274,49 @@ def db_health(_auth: dict[str, Any] = Depends(require_current_user)) -> dict:
     return {"success": True, "database": row[0], "user": row[1]}
 
 
+@router.get("/stats")
+def get_stats(_auth: dict[str, Any] = Depends(require_current_user)) -> dict:
+    """Return today's admission, discharge, and transfer counts from the database.
+    'Today' is evaluated in the database server's local time zone.
+    Admissions  = patients whose created_at    is today and are still active (not discharged).
+    Discharged  = patients whose discharged_at is today.
+    Transfers   = audit log entries of type PATIENT_TRANSFER logged today.
+    """
+    with get_connection() as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    COUNT(*) FILTER (
+                        WHERE created_at    >= date_trunc('day', now())
+                          AND discharged_at IS NULL
+                    )::int AS admissions_today,
+
+                    COUNT(*) FILTER (
+                        WHERE discharged_at >= date_trunc('day', now())
+                    )::int AS discharged_today,
+
+                    (
+                        SELECT COUNT(*)::int
+                        FROM audit_log
+                        WHERE action_type = 'PATIENT_TRANSFER'
+                          AND created_at  >= date_trunc('day', now())
+                    ) AS transfers_today
+                FROM patients
+                """
+            )
+            row = cursor.fetchone()
+
+    return {
+        "success": True,
+        "data": {
+            "admissionsToday": row["admissions_today"],
+            "dischargedToday": row["discharged_today"],
+            "transfersToday":  row["transfers_today"],
+        },
+    }
+
+
 @router.get("/audit-log")
 def get_audit_log(
     current_user: dict[str, Any] = Depends(require_current_user),
