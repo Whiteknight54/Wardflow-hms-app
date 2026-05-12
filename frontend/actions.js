@@ -54,9 +54,9 @@ async function refreshFromBackendSnapshot() {
 // Side effects: Adds to patients[], wardObj.occ++, auditLog, calls refreshDashboard()
 // Called by: admitModal form submit button
 async function admitPatient() {
-  if (!getPerms().admit) { alert('You do not have permission to admit patients.'); return; }
+  if (!getPerms().admit) { showToast('You do not have permission to admit patients.', 'error'); return; }
   const name = document.getElementById('admitName').value.trim();
-  if(!name) { alert('Please enter a patient name'); return; }
+  if(!name) { showToast('Please enter a patient name.', 'error'); return; }
 
   const sexSelect = document.getElementById('admitSex');
   const sex = sexSelect ? sexSelect.value : '—'; 
@@ -72,7 +72,7 @@ async function admitPatient() {
   const wardName = (document.getElementById('admitWard').value || '').trim();
   const preferredBedLabel = (document.getElementById('admitBed')?.value || '').trim();
   if (!wardName) {
-    alert('Please select a ward and bed.');
+    showToast('Please select a ward and bed.', 'error');
     return;
   }
 
@@ -90,17 +90,17 @@ async function admitPatient() {
     const selectedBedMatch = preferredBedLabel.match(/\d+/);
     const selectedBedNum = selectedBedMatch ? parseInt(selectedBedMatch[0], 10) : NaN;
     if (!Number.isFinite(selectedBedNum) || selectedBedNum < 1 || selectedBedNum > wardObj.beds) {
-      alert('Selected bed is invalid for this ward. Please reselect a bed.');
+      showToast('Selected bed is invalid for this ward. Please reselect a bed.', 'error');
       return;
     }
     if (occupiedBeds.includes(selectedBedNum)) {
-      alert('Selected bed is no longer available. Please choose another bed.');
+      showToast('Selected bed is no longer available. Please choose another bed.', 'error');
       return;
     }
     bedLabelForAdmission = `Bed ${selectedBedNum}`;
   } else {
     if (wardObj.occ >= wardObj.beds) {
-      alert(`🚨 Admission Failed: ${wardName} Ward is at maximum capacity.`);
+      showToast(`Admission failed: ${wardName} Ward is at full capacity.`, 'error');
       return;
     }
 
@@ -117,6 +117,9 @@ async function admitPatient() {
   while (existingIds.has(newId));
   
   if (!confirm(`Admit ${name} to ${wardName} Ward (${bedLabelForAdmission})?`)) return;
+
+  const submitBtn = document.querySelector('#admitModal .btn-primary, #admitModal [onclick*="admitPatient"]');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Admitting…'; }
 
   try {
     const result = await apiRequest('/patients', {
@@ -151,7 +154,9 @@ async function admitPatient() {
     }
     showToast(`Admitted ${name}`);
   } catch (error) {
-    alert(`Admission failed: ${error.message}`);
+    showToast(`Admission failed: ${error.message}`, 'error');
+  } finally {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Admit Patient'; }
   }
 }
 
@@ -161,8 +166,11 @@ async function admitPatient() {
 // Side effects: Removes from patients[], auditLog updated, calls refreshDashboard()
 // Called by: "Discharge" button in patient detail modal
 async function dischargePatient() {
-  if (!getPerms().discharge) { alert('You do not have permission to discharge patients.'); return; }
+  if (!getPerms().discharge) { showToast('You do not have permission to discharge patients.', 'error'); return; }
   if (!confirm('Discharge this patient? They will be removed from the board.')) return;
+
+  const dischargeBtn = document.querySelector('#detailModal .btn-danger, #detailModal [onclick*="dischargePatient"]');
+  if (dischargeBtn) { dischargeBtn.disabled = true; dischargeBtn.textContent = 'Discharging…'; }
 
   try {
     const dischargeTarget = currentPatientId;
@@ -180,10 +188,11 @@ async function dischargePatient() {
     await refreshFromBackendSnapshot();
     await loadStatsFromBackend();
     showToast(`Patient ${currentPatientId} discharged`);
+    closeModal('detailModal');
   } catch (error) {
-    alert(`Discharge failed: ${error.message}`);
+    showToast(`Discharge failed: ${error.message}`, 'error');
+    if (dischargeBtn) { dischargeBtn.disabled = false; dischargeBtn.textContent = 'Discharge'; }
   }
-  closeModal('detailModal');
 }
 
 // TRANSFER PATIENT: Move patient to different ward and/or team
@@ -193,18 +202,18 @@ async function dischargePatient() {
 // Called by: "Confirm Transfer" button in transfer modal
 // Checks permission and logs the action
 async function doTransfer() {
-  if (!getPerms().transfer) { alert('You do not have permission to transfer patients.'); return; }
+  if (!getPerms().transfer) { showToast('You do not have permission to transfer patients.', 'error'); return; }
   
   const p = patients.find(x => x.id === currentPatientId);
   if (p) {
     const newWard = document.getElementById('transferWardSelect').value;
     const targetWard = wards.find(w => w.name === newWard);
     if (!targetWard) {
-      alert('Selected ward not found. Please try again.');
+      showToast('Selected ward not found. Please try again.', 'error');
       return;
     }
     if (newWard !== p.ward && targetWard.occ >= targetWard.beds) {
-      alert(`Transfer blocked: ${newWard} Ward is at maximum capacity.`);
+      showToast(`Transfer blocked: ${newWard} Ward is at full capacity.`, 'error');
       return;
     }
     if (!confirm(`Transfer this patient to ${newWard}?`)) return;
@@ -264,7 +273,7 @@ async function doTransfer() {
 // Called by: "Log Treatment" button in patient detail modal
 // Validation: Checks permission, doctor exists, team matches patient team
 async function recordTreatment() {
-  if (!getPerms().logTreatment) { alert('You do not have permission to log treatments.'); return; }
+  if (!getPerms().logTreatment) { showToast('You do not have permission to log treatments.', 'error'); return; }
   
   const p = patients.find(x => x.id === currentPatientId);
   if (!p) return;
